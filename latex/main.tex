@@ -123,6 +123,7 @@ We found that in almost all program the male students are more than the female s
 
 % \subsubsection{Description of statistics of all attributes}
 \subsection{Classification}
+\label{sec:clf}
 The task we are interested is whether we could infer the stresslevel of the student using other features. The feature set we choose is:"program" "gender","machine learning", "information retrieval","statistics","databases","DM". The label comes from the way stated in \ref{sec:prep}. We try with several different classifier and tune the hyper-parameters based on the cross-validation accuracy, and we choose the fold to be 5 and fixed for all classifiers.\\ The results are shown below:
 \begin{table}[]
     \centering
@@ -149,6 +150,26 @@ For Gaussian Naive classifier we used the default setup as a baseline.
 In general, the GBDT works the best and used much less parameters than its opponent RF. It might indicate the sturcture of GBDT fits better for this kind problem than any other classifier.
 
 
+
+\section{Research and theory}
+
+\subsection{Theory: Analyze a less obvious dataset}
+\begin{itemize}
+    
+    \item Firstly do some cleaning on the given dataset. We extract the labels of the dataset by convert the first word from "ham" to 1 and "spam" to 0. Then we use the text after the label as the raw feature. After filtering out all punctuation in the raw feature, we used TF-IDF to transform the raw feature to a numerical vector of size (9534,). The final shape of the feature matrix and label are (5574, 9534) and (5574,) respectably.
+    \item We then trained 6 classifiers as did in section \ref{sec:clf}, the cross validation fold is set again as 5 and results are shown in the table below:
+    \begin{table}[]
+        \centering
+        \caption{The cross validation accuracy of all classifiers through experiments on SmsCollection.}
+        \begin{tabular}{|l|l|l|l|l|l|l|l|}
+            \hline
+            Classifier & LR    & KNN   & GBDT  & RF    & SVM     & DT    \\ \hline
+            Accuracy & 0.956 & 0.927 & 0.966 & 0.970 & 0.866  & 0.959 \\ \hline
+        \end{tabular}
+        \label{fig:clf2}
+    \end{table}
+\end{itemize}
+All the classifiers use the default parameters provided by the sklearn. We did not perform further tuning as the performance is already very impressive. Among all the classifiers the decision tree based classifiers perform the best, GBDT, RF and DT all achieve validation accuracy above 95 percents. To further improve the performance we advice not only further tuning with the base estimators number and max depth in DT-based classifiers, but also include more linear classifiers and create a boosting mega classifier.
 
 % %
 % % ---- Bibliography ----
