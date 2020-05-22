@@ -427,9 +427,13 @@ TSWLatexianTemp*
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
 
-Assignment*
-assignment*
 Grading*
 Springer*
 
 main.pdf
+example
+
+.vscode
+*.pkl
+*.pdf
+*.lnk
