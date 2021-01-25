@@ -1,0 +1,247 @@
+% This is samplepaper.tex, a sample chapter demonstrating the
+% LLNCS macro package for Springer Computer Science proceedings;
+% Version 2.20 of 2017/10/04
+%
+\documentclass[runningheads]{llncs}
+%
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{wrapfig}
+
+% Used for displaying a sample figure. If possible, figure files should
+% be included in EPS format.
+%
+% If you use the hyperref package, please uncomment the following line
+% to display URLs in blue roman font according to Springer's eBook style:
+% \renewcommand\UrlFont{\color{blue}\rmfamily}
+
+\begin{document}
+%
+\title{Data Mining Techniques - Assignment 2}
+%
+%\titlerunning{Abbreviated paper title}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Xinyu Fu 2656355 \and
+Gongze Cao: 2656348 }
+%
+\authorrunning{Xinyu Fu \and
+Gongze Cao,  }
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{VU-DM-2020-118}
+%\email{lncs@springer.com}\\
+%\url{http://www.springer.com/gp/computer-science/lncs} \and
+%ABC Institute, Rupert-Karls-University Heidelberg, Heidelberg, Germany\\
+%\email{\{abc,lncs\}@uni-heidelberg.de}}
+%
+\maketitle              % typeset the header of the contribution
+%
+
+%
+%
+%
+%
+\section{Process Report}
+    \subsection{Project schedule}
+
+    \subsection{Workload Distribution}
+    Half-half workload. Since there are only two people in our group, any of us wont accept even 1\% more effort paid than the other one.
+    % gongze: hahahahahahaha
+    \subsection{Cooperation}
+
+\section{Related Works(Business's understanding)}
+%potential alg:XGBoost RandomForest LGBMRANKER
+
+\section{Data Understanding and exploring}
+    \subsection{Dataset statistics}
+    
+    %Data size: train and test, difference, (refer slide)
+    
+    %catecorical data be careful,
+    
+    %date time
+    
+    \subsection{Plots}
+    %working with subsample to save power (nrows= 100,000) 40mb
+    
+    %Outlier detection
+    
+    %Missing Values
+    
+    \subsection{Remarks about data distributions}
+        %not normalized feature such as 
+        
+        %position biased
+        
+        
+
+
+
+\section{Data preparation and engineering}
+    \subsection{Data preprocessing }
+        \subsubsection{Missing values}
+            %drop columns with more than 60% missing values
+            % reason to leave it is RANK alg would ignore the NULLs (more explaination)
+            
+        \subsubsection{Date time object}    
+            %date_time to hour, day of week, month
+    
+        \subsubsection{Build Target Column}   
+        % First run of feature importance rank, to have a big picture which feature are relatively more important 
+        
+        \subsubsection{Feature Normalisation}
+        
+        %pRICE USD QQ NORM BEFORE AND AFTER
+        
+    \subsection{Feature Selection/Variables analysis}
+        
+        \subsubsection{Groupby propid and srch id}
+        %groupby and normalisation 
+        
+        \subsubsection{Importance rank by XGBoost}
+        
+        % Selection %XGBclassifier selection by trade of between accuracy and the number of features
+        
+        \subsubsection{feature selection}
+        
+        %corr map
+        
+        %select most important features
+        
+    \subsubsection{Failed Feature engineering}
+        
+        %failed test ,position estimation, 
+        
+        %/failed test with ExtraTreesClassifier for imprtance rank %learnt business understanding is important 
+
+\section{Models and evaluation}
+% Algorithm: which/why/how it works(5%)
+\subsection{Task briefing}
+
+The user $i$ has queries noted as $q_i$, the candidate set of documents is $c_{i,1}, c_{i,2}...c_{i,N}$ , the correct result is assumed to be sorted as noted as $c_{i,1}, c_{i,2}...c_{i,K}$. The candidate document set is generally larger than the final returned set, therefore $N>=K$. For example, given a question query, choose the best 5 answers from 10 candidate sentences, and the returned list should also be a list of document of length 5, sorted by their correlation with the queries.
+\subsection{Methods}
+There have already been many successful model for LTR(Learning to Rank) task and they could be roughly classified to 3 categories: Pointwise, Pairwise, Listwise. The detailed explaination is as following:
+
+\subsubsection{Pointwise}
+Pointwise treats the ranking problem as a binary classification problem, and the training samples are organized into a triple $(q_{i},c_{i,j},y_{i,j})$. $y_{i,j}$ is a binary value that indicates whether $c_{i,j}$ is a correct answer to the $q_{i}$. We can train a binary classification model:$h_{\theta}(q_{i},c_{i,j})\rightarrow y_{i,j}$, $0 \leq y_{i,j} \leq 1$. The objective of the model is to minimize the cross entropy of all the query and candidate pairs in the dataset.
+
+In the prediction stage, the scores obtained from binary classification model $h_\theta$ is used to sort all candidate sentences, then top-k scored sentences are selected as the top-k answers.
+
+Common Pointwise methods include McRank\cite{li2008mcrank} and so on.
+
+Disadvantages:
+\begin{itemize}
+    \item The pointwise method does not consider the internal dependencies between the docs corresponding to the same query. On the one hand, the samples in the input space are not IID, which violates the basic assumption of ML. On the other hand, the structure between the samples is not fully utilized. Moreover, when different queries have different numbers of docs, the overall loss will be dominated by the query group that has larger number of docs. As mentioned earlier, each group of queries should be equivalent.
+    \item The loss function also has no position information from model to prediction ranking. Therefore, the loss function may inadvertently overemphasize those unimportant entries, that is, those entries that has a small impact on the user experience.
+\end{itemize}
+
+\subsubsection{Pairwise}
+
+In pairwise ranking model approach $h_theta$ allows the correct answer scored significantly higher than the wrong candidate answer. To give a query, pairwise gives a pair of candidate answers to learn and predict which sentence is the best answer to the query. Sample training for $(q_i, c^+_ i, c^−_i)$, in which $q_i$ is a query, $c^+_i$ is the correct candidate, $c^-_i$ is a wrong candidate.
+
+The loss function is the hinge loss function:
+
+\begin{equation}
+    loss=max\left\{ 0，m-h_\theta(q_i,c^+_i)+h_\theta(q_i,c^-_i)\right\}
+\end{equation}
+
+where $m$ is the threshold.
+If $h_θ(q_i, c^+ _i)−h_θ(q_i, c^−_i) < m$ and the loss is greater than zero, this means that the the incorrect entry could come above the correct result; if the loss equals to 0, the model correctly result came in above the incorrect result. The purpose of the hinge loss function is to make the score of the correct result greater than the score of the wrong result by a margin of $m$.
+
+Pairwise method has many implementations, such as Ranking SVM, RankNet, Frank, RankBoost, etc.
+
+Disadvantages:
+\begin{itemize}
+    \item The number of candidate pairs will be twice the number of candidates, so the issues of imbalance of the number of doc between queries are worsened in the pairwise class method.
+    \item The pairwise method is more sensitive to the noise in label than the pointwise method, that is, one wrong label can cause multiple doc pair label errors.
+    \item The pairwise method only considers the relative position of the candidate pair, and the loss function still does not include any position information.
+    \item The pairwise method also does not consider the internal dependencies between the candidate pairs corresponding to the same query.
+\end{itemize}
+
+\subsubsection{Listwise}
+What Pairwise and Pointwise method do is actually factorize the whole sorted series to multiple compositions, and model each composition using auxiliary loss function. The reason is that normally the metrics for a whole query-result pair is not differentiable with respect to parameters. But still many methods are developed to train such model with comprehensive target loss like NDCG or MAP.
+
+The Listwise method is a much more direct method than pariwise and pointwise, as it optimize the metrics directly. It focuses on its own goals and tasks and directly optimizes the document sorting results, so it is often the best.
+
+Listwise method also has many implementations, such as AdaRank，SoftRank，LambdaMART.
+
+\subsection{Metrics}
+
+We used the NDCG@5 as the metric for cross validation, as it is also the test score.
+NDCG stands for Normalized Discounted Cumulative Gain. It is a common metric for sort and recommendation evaluation. The recommendation system usually returns an item list for a user, assuming that the list length is K. In this case NDCG@K can be used to evaluate the gap between the sorted list and the user's real interaction list. The calculation of NDCG is showing as following:
+\begin{itemize}
+    \item Gain: Relevance score of each item in the list\\
+        \begin{equation}
+            Gain = r(i) \\
+        \end{equation}
+    \item Cumulative Gain: an accumulated Gain along the K items list\\
+        \begin{equation}
+            CG@K = \sum_{i}^{K} r(i)\\
+        \end{equation}}
+    \item Discounted Cumulative Gain: Considering the immportance of the position, a higher-correlated result has higher impact on the result, and the lower-ranking items have discounted impact:
+        \begin{equation}
+            DCG@K = \sum_i^K \frac{{r(i)} }{\log_2(i + 1)} \\
+        \end{equation}
+    \item DCG can evaluate the recommendation list of one user. If you want to use this metric to evaluate a recommendation algorithm, you need to evaluate the recommendation list of all users. But the DCG between different users does not have clear interpretations. So the natural idea is to calculate the DCG score of an ideal situation (or obtained from real-life simulation) for each user, expressed by IDCG, and then use the ratio of DCG and IDCG of each user as the score for the specific user. Averaging the score among all users will give the final NDCG.
+        \begin{equation}
+            N D C G_{u} @ K=\frac{D C G_{u} @ K}{I D C G_{u}}  \\ 
+        \end{equation}
+        \begin{equation}
+            NDCG @ K= \frac{N D C G_{u} @ K}{\left| u \right|}\\
+        \end{equation}
+
+\end{itemize}
+
+
+% some theoretic details about the final models
+\subsection{Experiments}
+
+
+We conducted the experiments with two different framework, XGBoost and LightGBM. Below is the detailed configuration and cross validation performance.
+
+\subsubsection{XGBoost}
+We use the provided Scikit-Learn api called "XBGRanker", and set \textbf{learning\_rate=0,1}, \textbf{subsample\_ratio=0.5}, then perform grid search on \textbf{objective={rank:pairwise, rank:ndcg}}, \textbf{n\_estimators:{500, 1000}}, \textbf{max\_depth:[3,5,10]}.
+We found out:
+\begin{itemize}
+    \item Setting \textbf{max\_depth} to 10 will lead to severe overfitting, could result up to a 0.2 gap in terms of ndcg@5 between train split and validation split.
+    \item It is generally beneficial to use more steps(estimators) and set a reasonable early stop bound.
+    \item The local best cross-validation ndcg@5- among all configurations is 0.1894, which has params as \textbf{objective=rank:pairwise}, \textbf{n\_estimators:1000}, \textbf{max\_depth:5}. The kaggle test result is 0.15780, which indicates we might need to improve either feature engineering or explore more configurations.
+\end{itemize}
+
+\subsection{LightGBM}
+
+For LightGBM we use \textbf{objective='lambdamart', metric='ndcg', max\_position=5, label\_gain=[0,1,2]}, and did a grid search on several parameters: \textbf{n\_estimators=[400, 1000], boosting=['gbdt', 'dart'], max\_depth:[-1.5]}.
+The result we have is following:
+\begin{itemize}
+    \item Setting \textbf{max\_depth} as default -1 can easily lead to an ever rising metric on training set, meaning the model can easily overfit.
+    \item We found dart get easily overfitted, leading to as much as 0.15 gap between training and validation set. Whild gbdt is less vulnerable. This might relate to the fact dart does not allow early stopping.
+    \item We have the best cross validation ndcg@5 of 0.4387, coming from the configuration \textbf{n\_estimators=1000, boosting='dart', max\_depth:-1}. And the final test score according to kaggle is:0.40401.
+\end{itemize}
+
+\subsubsection{Machine specs}
+We run most of the experiments on a machine with Xeon Gold 5118 with 12 cores, a GeForce 1080Ti and 60G RAM.
+
+% parameters
+% evaluations
+\section{Lessons Learned}
+
+\subsection{Model}
+
+We put many efforts at first to figure out how integrate both XGBoost, LightGBM and Scikit-learn to make the full of use of all Scikit-Learn utility function. We write some hack class and functions for this use, but at last still can not manage to perform the cross validation in Scikit-learn way. In turn we wrote ourself a cross-validation class to use. We also met many technical issues that is not well documented, such as we experienced several abrupt breakdown while using XGBoost. At first we suspect it to be a memory issue, so we tried scaling our machine up, adding more ram, but the bug is still there. Then we found out a key parameter which could be set to run the xgb-hist on gpu instead that fixed this issue.
+
+
+%
+% ---- Bibliography ----
+%
+% BibTeX users should specify bibliography style 'splncs04'.
+% References will then be sorted and formatted in the correct style.
+%
+\bibliographystyle{splncs04}
+\bibliography{mybib}
+%
+\begin{thebibliography}{8}
+\end{thebibliography}
+\end{document}
